@@ -3,10 +3,10 @@ import {
   Banknote,
   FileText,
   ShoppingCart,
-  Package,
-  Calendar,
+  ShoppingBag,
+  Grid,
   AlertTriangle,
-  ArrowUpRight,
+  ArrowRight,
   TrendingUp,
   Plus,
   RefreshCw,
@@ -30,10 +30,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     lowStockMedicines,
     selectedBranch,
     formatRupiah,
-    currentUser
+    currentUser,
+    cart
   } = usePharmacy();
 
-  // Calculate metrics for today
+  // Metrics for today
   const todayStr = new Date().toISOString().split('T')[0];
   const todaySales = sales.filter(s => s.date.startsWith(todayStr));
   const todayTotalRevenue = todaySales.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -55,16 +56,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalMedicineSku = medicines.length;
 
   // Calculate top selling medicines
-  const medicineSalesMap: Record<string, { code: string; name: string; soldQty: number; category: string; stock: number }> = {};
-  
-  // Seed with all medicines so even zero-sales ones can be tracked
+  const medicineSalesMap: Record<string, { code: string; name: string; soldQty: number; stock: number; unit: string }> = {};
+
   medicines.forEach(m => {
     medicineSalesMap[m.id] = {
       code: m.code,
       name: m.name,
       soldQty: 0,
-      category: m.category,
-      stock: m.stock
+      stock: m.stock,
+      unit: m.unit
     };
   });
 
@@ -77,8 +77,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           code: it.code,
           name: it.name,
           soldQty: it.quantity,
-          category: it.category,
-          stock: 0
+          stock: 0,
+          unit: it.unit
         };
       }
     });
@@ -94,68 +94,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      {/* Header & Breadcrumb - Matching Screenshot */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight flex items-baseline gap-2">
-            <span>Dashboard</span>
-            <span className="font-extrabold text-teal-800">{selectedBranch}</span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Ringkasan operasional kasir, perputaran stok, dan peringatan reorder obat.
-          </p>
-        </div>
+    <div className="space-y-5 pb-16">
+      {/* Title & Breadcrumbs - Exact layout from screenshot */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 border-b border-slate-200/60 pb-3">
+        <h1 className="text-xl sm:text-2xl font-normal text-slate-500 tracking-tight">
+          Dashboard <strong className="font-bold text-slate-800">{selectedBranch}</strong>
+        </h1>
 
-        {/* Quick Action Buttons */}
-        <div className="flex items-center gap-2">
-          {currentUser.role !== 'kasir' && (
-            <button
-              onClick={onOpenAddMedicine}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
-            >
-              <Plus className="w-3.5 h-3.5 text-teal-600" />
-              <span>Tambah Obat Baru</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => onNavigate('pos')}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 text-white rounded-lg text-xs font-bold hover:bg-teal-700 transition-colors shadow-2xs"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Buka Kasir POS</span>
-          </button>
+        <div className="text-xs text-slate-400 font-medium">
+          <span className="text-teal-600 hover:underline cursor-pointer" onClick={() => onNavigate('dashboard')}>Home</span>
+          <span className="mx-1.5">/</span>
+          <span className="text-slate-500">Dashboard</span>
         </div>
       </div>
 
       {/* Reorder Alert Banner if any medicine is at or below minimum threshold */}
       {lowStockMedicines.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-500 text-white rounded-lg shrink-0 mt-0.5">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-amber-900">
-                Peringatan Stok Obat Menipis ({lowStockMedicines.length} Item Mencapai Batas Reorder)
-              </h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Obat seperti <strong className="font-semibold">{lowStockMedicines.slice(0, 3).map(m => m.name).join(', ')}</strong> {lowStockMedicines.length > 3 ? `dan ${lowStockMedicines.length - 3} lainnya` : ''} telah mencapai atau berada di bawah batas minimum pemesanan kembali.
-              </p>
+        <div className="bg-amber-50/90 border border-amber-200 rounded-lg p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+            <div className="text-xs">
+              <strong className="text-amber-900 font-bold">
+                Peringatan Reorder Stok ({lowStockMedicines.length} Obat Mencapai Batas Minimum):
+              </strong>
+              <span className="text-amber-800 ml-1.5">
+                {lowStockMedicines.slice(0, 3).map(m => `${m.name} (${m.stock} ${m.unit})`).join(', ')}
+                {lowStockMedicines.length > 3 ? ` dan ${lowStockMedicines.length - 3} lainnya` : ''}.
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => onNavigate('medicines')}
-              className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors"
+              className="px-2.5 py-1 bg-white border border-amber-300 text-amber-900 rounded text-xs font-medium hover:bg-amber-100 transition-colors"
             >
-              Cek Master Obat
+              Lihat Data Obat
             </button>
             <button
               onClick={() => onNavigate('purchases')}
-              className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors shadow-2xs"
+              className="px-2.5 py-1 bg-amber-600 text-white rounded text-xs font-bold hover:bg-amber-700 transition-colors shadow-2xs"
             >
               Buat PO Kulakan
             </button>
@@ -163,129 +141,122 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 5 Stat Cards - Exactly matching the user's screenshot layout & color scheme */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: Penjualan Hari Ini (Cyan Theme) */}
-        <div className="bg-[#17a2b8] text-white rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+      {/* Row 1: Two Wide Hero Stat Cards (Exactly from screenshot) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Card 1: Penjualan Hari ini (Cyan #5bc0de) */}
+        <div className="bg-[#5bc0de] text-white rounded-lg p-5 relative overflow-hidden shadow-xs flex flex-col justify-between min-h-[110px]">
           <div>
-            <div className="font-mono text-xl sm:text-2xl font-bold tracking-tight">
+            <div className="font-mono text-2xl sm:text-3xl font-extrabold tracking-tight">
               {formatRupiah(todayTotalRevenue)}
             </div>
-            <p className="text-xs text-cyan-100 mt-1 font-medium">
-              Penjualan <strong className="text-white">Hari ini</strong>
+            <p className="text-xs text-white/90 font-medium mt-1">
+              Penjualan <strong className="text-white font-bold">Hari ini</strong>
             </p>
           </div>
-          <div className="absolute right-3 bottom-2 text-white/20 pointer-events-none">
-            <Banknote className="w-14 h-14" />
+          {/* Subtle Banknote Watermark Icon */}
+          <div className="absolute right-4 bottom-2 text-white/20 pointer-events-none">
+            <Banknote className="w-20 h-20 stroke-[1.2]" />
           </div>
         </div>
 
-        {/* Card 2: Invoice Penjualan Hari Ini (Yellow Theme) */}
-        <div className="bg-[#ffc107] text-slate-900 rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
+        {/* Card 2: Invoice Penjualan Cash Hari ini (Amber #f0ad4e) */}
+        <div className="bg-[#f0ad4e] text-white rounded-lg p-5 relative overflow-hidden shadow-xs flex flex-col justify-between min-h-[110px]">
           <div>
             <div className="font-mono text-2xl sm:text-3xl font-extrabold tracking-tight">
               {todayInvoiceCount}
             </div>
-            <p className="text-xs text-slate-800 mt-1 font-medium">
-              Invoice Penjualan Cash <strong className="font-bold">Hari ini</strong>
+            <p className="text-xs text-white/90 font-medium mt-1">
+              Invoice Penjualan Cash <strong className="text-white font-bold">Hari ini</strong>
             </p>
           </div>
-          <div className="absolute right-3 bottom-2 text-slate-900/15 pointer-events-none">
-            <FileText className="w-14 h-14" />
-          </div>
-        </div>
-
-        {/* Card 3: Total Obat Terjual Bulan Ini (Light Blue Theme) */}
-        <div className="bg-[#20c997] text-white rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div>
-            <div className="font-mono text-2xl sm:text-3xl font-bold tracking-tight">
-              {monthItemsSold}
-            </div>
-            <p className="text-xs text-emerald-100 mt-1 font-medium">
-              <strong className="text-white">Total</strong> Obat Terjual Bulan Ini
-            </p>
-          </div>
-          <div className="absolute right-3 bottom-2 text-white/20 pointer-events-none">
-            <ShoppingCart className="w-14 h-14" />
-          </div>
-        </div>
-
-        {/* Card 4: Jumlah Obat / SKU (Green Theme) */}
-        <div className="bg-[#28a745] text-white rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div>
-            <div className="font-mono text-2xl sm:text-3xl font-bold tracking-tight">
-              {totalMedicineSku}
-            </div>
-            <p className="text-xs text-green-100 mt-1 font-medium">
-              Jumlah Obat (SKU)
-            </p>
-          </div>
-          <div className="absolute right-3 bottom-2 text-white/20 pointer-events-none">
-            <Package className="w-14 h-14" />
-          </div>
-        </div>
-
-        {/* Card 5: Total Invoice Penjualan Bulan Ini (Coral/Red Theme) */}
-        <div className="bg-[#e83e8c] text-white rounded-xl p-4 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[110px]">
-          <div>
-            <div className="font-mono text-2xl sm:text-3xl font-bold tracking-tight">
-              {monthInvoiceCount}
-            </div>
-            <p className="text-xs text-pink-100 mt-1 font-medium">
-              <strong className="text-white">Total</strong> Invoice Penjualan Bulan ini
-            </p>
-          </div>
-          <div className="absolute right-3 bottom-2 text-white/20 pointer-events-none">
-            <Calendar className="w-14 h-14" />
+          {/* Subtle Invoice Document Watermark Icon */}
+          <div className="absolute right-4 bottom-2 text-white/20 pointer-events-none">
+            <FileText className="w-20 h-20 stroke-[1.2]" />
           </div>
         </div>
       </div>
 
-      {/* Two Tables Grid: Data Obat Terlaris & Data Stok Terkecil / Reorder Alert */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Table 1: Data Obat Terlaris */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-teal-600" />
-              <h3 className="font-bold text-slate-800 text-sm">
-                Data Obat <span className="text-slate-500 font-normal">Terlaris</span>
-              </h3>
+      {/* Row 2: Three Stat Cards (White cards with colored icons, exactly from screenshot) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 3: Total Obat Terjual Bulan Ini */}
+        <div className="bg-white rounded-lg border border-slate-200/80 p-5 relative overflow-hidden shadow-xs flex items-center justify-between">
+          <div>
+            <div className="font-mono text-3xl font-extrabold text-slate-800">
+              {monthItemsSold}
             </div>
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              <strong className="text-slate-700 font-bold">Total</strong> Obat Terjual Bulan Ini
+            </p>
+          </div>
+          <div className="text-[#5bc0de]">
+            <ShoppingCart className="w-12 h-12 stroke-[1.5]" />
+          </div>
+        </div>
+
+        {/* Card 4: Jumlah Obat */}
+        <div className="bg-white rounded-lg border border-slate-200/80 p-5 relative overflow-hidden shadow-xs flex items-center justify-between">
+          <div>
+            <div className="font-mono text-3xl font-extrabold text-slate-800">
+              {totalMedicineSku}
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              Jumlah Obat (Katalog)
+            </p>
+          </div>
+          <div className="text-[#5cb85c]">
+            <ShoppingBag className="w-12 h-12 stroke-[1.5]" />
+          </div>
+        </div>
+
+        {/* Card 5: Total Invoice Penjualan Bulan ini */}
+        <div className="bg-white rounded-lg border border-slate-200/80 p-5 relative overflow-hidden shadow-xs flex items-center justify-between">
+          <div>
+            <div className="font-mono text-3xl font-extrabold text-slate-800">
+              {monthInvoiceCount}
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-1">
+              <strong className="text-slate-700 font-bold">Total</strong> Invoice Penjualan Bulan ini
+            </p>
+          </div>
+          <div className="text-[#d9534f]">
+            <Grid className="w-12 h-12 stroke-[1.5]" />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Two Data Tables (Exactly as shown in screenshot) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Table 1: Data Obat Terlaris */}
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-700 text-sm">
+              Data Obat <span className="text-slate-500 font-normal">Terlaris</span>
+            </h3>
             <button
               onClick={() => onNavigate('daily-report')}
-              className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+              className="text-xs text-teal-600 hover:underline font-medium"
             >
-              <span>Laporan Lengkap</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              Lihat Laporan
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+              <thead className="bg-slate-50/70 text-slate-600 border-b border-slate-200 font-medium">
                 <tr>
-                  <th className="py-2.5 px-4 font-semibold w-12 text-center">No.</th>
-                  <th className="py-2.5 px-4 font-semibold">Kode Obat</th>
-                  <th className="py-2.5 px-4 font-semibold">Nama Obat</th>
-                  <th className="py-2.5 px-4 font-semibold text-center">Sisa Stok</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Terjual</th>
+                  <th className="py-2.5 px-4 w-12 text-center">No.</th>
+                  <th className="py-2.5 px-4">Kode Obat</th>
+                  <th className="py-2.5 px-4">Nama</th>
+                  <th className="py-2.5 px-4 text-center">Terjual</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {topSellingMedicines.map((med, index) => (
-                  <tr key={med.code} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={med.code} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 px-4 text-center text-slate-500 font-mono">{index + 1}</td>
-                    <td className="py-2.5 px-4 font-mono text-slate-700 font-medium">{med.code}</td>
+                    <td className="py-2.5 px-4 font-mono text-slate-700">{med.code}</td>
                     <td className="py-2.5 px-4 font-semibold text-slate-900">{med.name}</td>
-                    <td className="py-2.5 px-4 text-center">
-                      <span className={`font-mono px-2 py-0.5 rounded text-[11px] font-semibold ${
-                        med.stock <= 5 ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {med.stock}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-mono font-bold text-teal-700">
+                    <td className="py-2.5 px-4 text-center font-mono font-bold text-teal-800">
                       {med.soldQty}
                     </td>
                   </tr>
@@ -295,60 +266,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Table 2: Data Stok Terkecil / Reorder Alert */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h3 className="font-bold text-slate-800 text-sm">
-                Data Stok <span className="text-slate-500 font-normal">Terkecil (Batas Reorder)</span>
-              </h3>
-            </div>
+        {/* Table 2: Data Stok Terkecil */}
+        <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-700 text-sm">
+              Data Stok <span className="text-slate-500 font-normal">Terkecil</span>
+            </h3>
             <button
               onClick={() => onNavigate('medicines')}
-              className="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+              className="text-xs text-teal-600 hover:underline font-medium"
             >
-              <span>Master Obat</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              Semua Obat
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+              <thead className="bg-slate-50/70 text-slate-600 border-b border-slate-200 font-medium">
                 <tr>
-                  <th className="py-2.5 px-4 font-semibold w-12 text-center">No.</th>
-                  <th className="py-2.5 px-4 font-semibold">Kode Barang</th>
-                  <th className="py-2.5 px-4 font-semibold">Nama Obat</th>
-                  <th className="py-2.5 px-4 font-semibold text-center">Min Stok</th>
-                  <th className="py-2.5 px-4 font-semibold text-right">Stok Fisik</th>
-                  <th className="py-2.5 px-4 font-semibold text-center">Status</th>
+                  <th className="py-2.5 px-4 w-12 text-center">No.</th>
+                  <th className="py-2.5 px-4">Kode Barang</th>
+                  <th className="py-2.5 px-4">Nama</th>
+                  <th className="py-2.5 px-4 text-center">Stock</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {lowestStockMedicines.map((med, index) => {
                   const isUnderMin = med.stock <= med.minStock;
                   return (
-                    <tr key={med.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={med.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-2.5 px-4 text-center text-slate-500 font-mono">{index + 1}</td>
-                      <td className="py-2.5 px-4 font-mono text-slate-700 font-medium">{med.code}</td>
+                      <td className="py-2.5 px-4 font-mono text-slate-700">{med.code}</td>
                       <td className="py-2.5 px-4 font-semibold text-slate-900">{med.name}</td>
-                      <td className="py-2.5 px-4 text-center font-mono text-slate-500">{med.minStock} {med.unit}</td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold">
+                      <td className="py-2.5 px-4 text-center font-mono font-bold">
                         <span className={isUnderMin ? 'text-red-600' : 'text-slate-800'}>
                           {med.stock} {med.unit}
                         </span>
-                      </td>
-                      <td className="py-2.5 px-4 text-center">
-                        {isUnderMin ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">
-                            Reorder
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Aman
-                          </span>
-                        )}
                       </td>
                     </tr>
                   );
@@ -359,36 +312,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Quick POS & Cash Flow Summary */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h4 className="text-sm font-bold text-slate-800">
-              Integrasi Penjualan & Pemotongan Stok Otomatis
-            </h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Setiap transaksi kasir langsung memotong stok obat pada sistem secara atomik dan mencatat HPP untuk pelaporan margin laba bersih harian.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onNavigate('daily-report')}
-              className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
-            >
-              <FileText className="w-4 h-4 text-teal-600" />
-              <span>Lihat Laporan Penjualan Hari Ini</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('pos')}
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-2 shadow-xs"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Mulai Transaksi Kasir</span>
-            </button>
+      {/* Row 4: Data Piutang Jatuh Tempo Kurang dari 30 Hari (From screenshot) */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-bold text-slate-700 text-xs">
+            Data Piutang <span className="text-slate-500 font-normal">Jatuh Tempo Kurang dari 30 Hari</span>
+          </h4>
+          {/* Pagination dots from screenshot */}
+          <div className="flex items-center gap-1.5">
+            <span className="w-4 h-1.5 bg-[#5bc0de] rounded-full"></span>
+            <span className="w-2.5 h-1.5 bg-slate-200 rounded-full"></span>
           </div>
         </div>
+        <p className="text-[11px] text-slate-400">
+          Tidak ada tagihan atau piutang yang jatuh tempo dalam 30 hari ke depan. Semua pembayaran kasir lunas tunai & nontunai.
+        </p>
       </div>
     </div>
   );
