@@ -1,6 +1,6 @@
 {
   "name": "POS Apotek Sehat - Sistem Kasir & Manajemen Obat",
-  "description": "Sistem Point of Sale (POS) Apotek lengkap dengan multi-role (Kasir, Manajer, Owner), laporan penjualan harian terintegrasi stok obat, CRUD master obat, riwayat perubahan harga, dan notifikasi otomatis stok minimum reorder.",
+  "description": "Sistem Point of Sale (POS) Apotek lengkap dengan multi-role (Kasir, Manajer, Owner), laporan penjualan harian terintegrasi stok obat, manajemen data obat, riwayat perubahan harga, dan notifikasi otomatis stok minimum reorder.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

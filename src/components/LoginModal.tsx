@@ -91,7 +91,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 </span>
                 <p className="font-bold text-slate-900 text-xs mt-2">Siti, S.Farm</p>
                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">PIN: 2345</p>
-                <p className="text-[10px] text-blue-700 font-medium mt-1">CRUD & Harga</p>
+                <p className="text-[10px] text-blue-700 font-medium mt-1">Kelola Obat & Harga</p>
               </button>
 
               <button

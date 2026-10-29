@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'medicines' as ActiveTab,
-      label: 'Master Obat (CRUD)',
+      label: 'Master Data Obat',
       icon: Pill,
       allowed: ['kasir', 'manajer', 'owner'] as UserRole[],
       badge: lowStockMedicines.length > 0 ? `${lowStockMedicines.length}` : null,

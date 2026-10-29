@@ -202,7 +202,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 >
                   <div>
                     <p className="font-semibold">Manajer (Siti Nurhaliza)</p>
-                    <p className="text-[11px] text-slate-500">Akses: CRUD Obat, Harga, Kulakan</p>
+                    <p className="text-[11px] text-slate-500">Akses: Kelola Obat, Harga, Kulakan</p>
                   </div>
                   {currentUser.role === 'manajer' && <UserCheck className="w-4 h-4 text-blue-600" />}
                 </button>

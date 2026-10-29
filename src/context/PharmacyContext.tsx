@@ -80,13 +80,13 @@ interface PharmacyContextType {
 const PharmacyContext = createContext<PharmacyContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  USERS: 'pos_apotek_users_v1',
-  MEDICINES: 'pos_apotek_medicines_v1',
-  SALES: 'pos_apotek_sales_v1',
-  PRICES: 'pos_apotek_price_history_v1',
-  PURCHASES: 'pos_apotek_purchases_v1',
-  PROFILE: 'pos_apotek_profile_v1',
-  CURRENT_USER_ID: 'pos_apotek_current_user_v1'
+  USERS: 'pos_apotek_users_v2',
+  MEDICINES: 'pos_apotek_medicines_v2',
+  SALES: 'pos_apotek_sales_v2',
+  PRICES: 'pos_apotek_price_history_v2',
+  PURCHASES: 'pos_apotek_purchases_v2',
+  PROFILE: 'pos_apotek_profile_v2',
+  CURRENT_USER_ID: 'pos_apotek_current_user_v2'
 };
 
 export const PharmacyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
